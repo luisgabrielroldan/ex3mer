@@ -1,6 +1,6 @@
 # Ex3mer
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/luisgabrielroldan/ex3mer/on-push)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/luisgabrielroldan/ex3mer/Elixir%20Tests%20&%20Dialyzer)
 [![github.com](https://img.shields.io/github/last-commit/luisgabrielroldan/ex3mer.svg)](https://github.com/luisgabrielroldan/ex3mer/commits/master)
 
 Ex3mer is a library for building streams from HTTP resources
