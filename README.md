@@ -26,8 +26,9 @@ Ex3mer.download(:get, "http://example.com/path/to/file.zip")
 |> Enum.to_list()
 ```
 
+## Examples
 
-## Events stream
+### Events stream
 
 `Ex3mer.stream!/2` returns a stream of event tuples:
   
@@ -57,7 +58,7 @@ Ex3mer.download(:get, "http://example.com/path/to/file.zip")
 The first two items emitted are the status and the response of headers.  The rest of the items are just chunks events.
 In case of disconnection, a new request is made transparently but no status/header items are sent to the stream consumer.
 
-## Data stream
+### Data stream
 
 `Ex3mer.stream_data!/2` returns a stream of chunks. If an error occurs an `%Ex3mer.Error{}` is raised.
 
@@ -75,4 +76,48 @@ In case of disconnection, a new request is made transparently but no status/head
 ]
 ```
 
+### Create a proxy endpoint to S3 with Phoenix
 
+```elixir
+# On router
+
+    get "/proxy/*path", ProxyController, :show
+
+
+# controllers/proxy_controller.ex
+defmodule MyAppWeb.ProxyController do
+  use Ex3merTestWeb, :controller
+
+  def show(conn, %{"path" => path}) do
+    path = Enum.join(path, "/")
+
+    "my-bucket"
+    |> Ex3mer.S3.get_object(path)
+    |> Ex3mer.stream!()
+    |> Enum.reduce_while(conn, fn
+      {:status, 200}, conn ->
+        conn =
+          conn
+          |> put_resp_content_type("application/octet-stream")
+          |> send_chunked(200)
+
+        {:cont, conn}
+
+      {:status, _}, conn ->
+        {:halt, send_resp(conn, 404, "Not found")}
+
+      {:headers, _}, conn ->
+        {:cont, conn}
+
+      {:chunk, data}, conn ->
+        case chunk(conn, data) do
+          {:ok, conn} ->
+            {:cont, conn}
+
+          {:error, :closed} ->
+            {:halt, conn}
+        end
+    end)
+  end
+end
+```
