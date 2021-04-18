@@ -14,12 +14,15 @@ defmodule Ex3mer.S3 do
   @empty_body ""
   @service :s3
 
-  @type get_object_opts :: {:ex_aws_config, ExAWsConfig.t()}
+  @get_object_params [:version_id]
 
-  @doc "Get an object from a bucket"
+  @type get_object_opts :: {:ex_aws_config, ExAWsConfig.t()} | {:version_id, binary()}
+
   @spec get_object(binary, binary, [get_object_opts]) :: Download.t()
-  def get_object(bucket, path, opts \\ nil) do
+  def get_object(bucket, path, opts) do
     ex_aws_config = opts[:ex_aws_config] || ExAWsConfig.new(@service)
+
+    path = set_params(path, opts)
 
     {url, ex_aws_config} = build_object_url(bucket, path, ex_aws_config)
 
@@ -31,6 +34,18 @@ defmodule Ex3mer.S3 do
       http_method: :get,
       body: @empty_body
     }
+  end
+
+  defp set_params(url, opts) do
+    case Keyword.take(opts, @get_object_params) do
+      [] ->
+        url
+
+      params ->
+        query = params |> Enum.into(%{}) |> URI.encode_query()
+
+        "#{url}?#{query}"
+    end
   end
 
   defp build_headers(method, url, ex_aws_config, body) do

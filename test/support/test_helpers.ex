@@ -1,4 +1,4 @@
-defmodule Ex3mer.ClientTestHelpers do
+defmodule Ex3mer.TestHelpers do
   @moduledoc false
 
   alias HTTPoison.{

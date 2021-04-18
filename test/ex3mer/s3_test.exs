@@ -1,7 +1,7 @@
 defmodule Ex3mer.S3Test do
   use ExUnit.Case
 
-  import Ex3mer.ClientTestHelpers
+  import Ex3mer.TestHelpers
 
   alias Ex3mer.{Download, S3}
 

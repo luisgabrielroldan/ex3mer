@@ -1,12 +1,12 @@
-defmodule Ex3mer.ClientTest do
+defmodule Ex3mer.DownloadTest do
   use ExUnit.Case
 
   import Mox
-  import Ex3mer.ClientTestHelpers
+  import Ex3mer.TestHelpers
 
   alias HTTPoison.AsyncResponse
 
-  alias Ex3mer.{Client, Download}
+  alias Ex3mer.Download
 
   test "with single chunk" do
     id = make_ref()
@@ -22,12 +22,16 @@ defmodule Ex3mer.ClientTest do
     msg_async_chunk(id, "helloworld")
     msg_async_end(id)
 
-    chunks =
+    events =
       download()
-      |> Client.stream!(http_client: HTTPoisonMock)
+      |> Download.stream!(http_client: HTTPoisonMock)
       |> Enum.to_list()
 
-    assert ["helloworld"] = chunks
+    assert [
+             {:status, 200},
+             {:headers, [{"Content-Length", "10"}]},
+             {:chunk, "helloworld"}
+           ] = events
   end
 
   describe "stream object successfully" do
@@ -45,12 +49,16 @@ defmodule Ex3mer.ClientTest do
       msg_async_chunk(id, "helloworld")
       msg_async_end(id)
 
-      chunks =
+      events =
         download()
-        |> Client.stream!(http_client: HTTPoisonMock)
+        |> Download.stream!(http_client: HTTPoisonMock)
         |> Enum.to_list()
 
-      assert ["helloworld"] = chunks
+      assert [
+               {:status, 200},
+               {:headers, [{"Content-Length", "10"}]},
+               {:chunk, "helloworld"}
+             ] = events
     end
 
     test "with multiple chunks" do
@@ -70,12 +78,19 @@ defmodule Ex3mer.ClientTest do
       msg_async_chunk(id, "coz")
       msg_async_end(id)
 
-      chunks =
+      events =
         download()
-        |> Client.stream!(http_client: HTTPoisonMock)
+        |> Download.stream!(http_client: HTTPoisonMock)
         |> Enum.to_list()
 
-      assert ["foo", "bar", "baz", "coz"] = chunks
+      assert [
+               {:status, 200},
+               {:headers, [{"Content-Length", "12"}]},
+               {:chunk, "foo"},
+               {:chunk, "bar"},
+               {:chunk, "baz"},
+               {:chunk, "coz"}
+             ] = events
     end
 
     test "recover from fail (disconnection)" do
@@ -105,12 +120,19 @@ defmodule Ex3mer.ClientTest do
       msg_async_chunk(id_2, "coz")
       msg_async_end(id_2)
 
-      chunks =
+      events =
         download()
-        |> Client.stream!(http_client: HTTPoisonMock)
+        |> Download.stream!(http_client: HTTPoisonMock)
         |> Enum.to_list()
 
-      assert ["foo", "bar", "baz", "coz"] = chunks
+      assert [
+               {:status, 200},
+               {:headers, [{"Content-Length", "12"}, {"Accept-Ranges", "bytes"}]},
+               {:chunk, "foo"},
+               {:chunk, "bar"},
+               {:chunk, "baz"},
+               {:chunk, "coz"}
+             ] = events
     end
 
     test "recover from fail (timeout)" do
@@ -140,91 +162,79 @@ defmodule Ex3mer.ClientTest do
       msg_async_chunk(id_2, "coz")
       msg_async_end(id_2)
 
-      chunks =
+      events =
         download()
-        |> Client.stream!(http_client: HTTPoisonMock)
+        |> Download.stream!(http_client: HTTPoisonMock)
         |> Enum.to_list()
 
-      assert ["foo", "bar", "baz", "coz"] = chunks
+      assert [
+               {:status, 200},
+               {:headers, [{"Content-Length", "12"}, {"Accept-Ranges", "bytes"}]},
+               {:chunk, "foo"},
+               {:chunk, "bar"},
+               {:chunk, "baz"},
+               {:chunk, "coz"}
+             ] = events
     end
   end
 
   describe "raise failures" do
-    test "file not found" do
-      id = make_ref()
-
-      HTTPoisonMock
-      |> expect(:request, fn _, _, _, _, _ ->
-        {:ok, %AsyncResponse{id: id}}
-      end)
-      |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
-
-      msg_async_status(id, 404)
-      msg_async_end(id)
-
-      assert_raise Ex3mer.Error, ~r/Object not found/, fn ->
-        download()
-        |> Client.stream!(http_client: HTTPoisonMock)
-        |> Enum.to_list()
-      end
-    end
-
-    test "access denied" do
-      id = make_ref()
-
-      HTTPoisonMock
-      |> expect(:request, fn _, _, _, _, _ ->
-        {:ok, %AsyncResponse{id: id}}
-      end)
-      |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
-
-      msg_async_status(id, 403)
-      msg_async_end(id)
-
-      assert_raise Ex3mer.Error, ~r/Access denied/, fn ->
-        download()
-        |> Client.stream!(http_client: HTTPoisonMock)
-        |> Enum.to_list()
-      end
-    end
-
-    test "unexpected status code" do
-      id = make_ref()
-
-      HTTPoisonMock
-      |> expect(:request, fn _, _, _, _, _ ->
-        {:ok, %AsyncResponse{id: id}}
-      end)
-      |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
-
-      msg_async_status(id, 500)
-      msg_async_end(id)
-
-      assert_raise Ex3mer.Error, ~r/Unexpected status code: 500/, fn ->
-        download()
-        |> Client.stream!(http_client: HTTPoisonMock)
-        |> Enum.to_list()
-      end
-    end
-
-    test "missing Content-Length header" do
-      id = make_ref()
-
-      HTTPoisonMock
-      |> expect(:request, fn _, _, _, _, _ ->
-        {:ok, %AsyncResponse{id: id}}
-      end)
-      |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
-
-      msg_async_status(id, 200)
-      msg_async_headers(id, [{"Foo-Bar", "Baz"}])
-
-      assert_raise Ex3mer.Error, ~r/Missing Content-Length header/, fn ->
-        download()
-        |> Client.stream!(http_client: HTTPoisonMock)
-        |> Enum.to_list()
-      end
-    end
+    # test "file not found" do
+    #   id = make_ref()
+    #
+    #   HTTPoisonMock
+    #   |> expect(:request, fn _, _, _, _, _ ->
+    #     {:ok, %AsyncResponse{id: id}}
+    #   end)
+    #   |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
+    #
+    #   msg_async_status(id, 404)
+    #   msg_async_end(id)
+    #
+    #   assert_raise Ex3mer.Error, ~r/Object not found/, fn ->
+    #     download()
+    #     |> Download.stream!(http_client: HTTPoisonMock)
+    #     |> Enum.to_list()
+    #   end
+    # end
+    #
+    # test "access denied" do
+    #   id = make_ref()
+    #
+    #   HTTPoisonMock
+    #   |> expect(:request, fn _, _, _, _, _ ->
+    #     {:ok, %AsyncResponse{id: id}}
+    #   end)
+    #   |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
+    #
+    #   msg_async_status(id, 403)
+    #   msg_async_end(id)
+    #
+    #   assert_raise Ex3mer.Error, ~r/Access denied/, fn ->
+    #     download()
+    #     |> Download.stream!(http_client: HTTPoisonMock)
+    #     |> Enum.to_list()
+    #   end
+    # end
+    #
+    # test "unexpected status code" do
+    #   id = make_ref()
+    #
+    #   HTTPoisonMock
+    #   |> expect(:request, fn _, _, _, _, _ ->
+    #     {:ok, %AsyncResponse{id: id}}
+    #   end)
+    #   |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
+    #
+    #   msg_async_status(id, 500)
+    #   msg_async_end(id)
+    #
+    #   assert_raise Ex3mer.Error, ~r/Unexpected status code: 500/, fn ->
+    #     download()
+    #     |> Download.stream!(http_client: HTTPoisonMock)
+    #     |> Enum.to_list()
+    #   end
+    # end
 
     test "multiple disconnections" do
       HTTPoisonMock
@@ -234,17 +244,20 @@ defmodule Ex3mer.ClientTest do
       |> stub(:stream_next, fn %AsyncResponse{id: _id} -> :ok end)
 
       msg_async_status(1, 200)
+      msg_async_headers(1, [{"Content-Length", "12"}])
       msg_async_end(1)
       msg_async_status(2, 200)
+      msg_async_headers(2, [{"Content-Length", "12"}])
       msg_async_end(2)
       msg_async_status(3, 200)
+      msg_async_headers(3, [{"Content-Length", "12"}])
       msg_async_end(3)
 
       assert_raise Ex3mer.Error,
-        ~r/Failed after 2 attempts. Last reason: :end/,
+                   ~r/:closed/,
                    fn ->
                      download()
-                     |> Client.stream!(http_client: HTTPoisonMock, max_errors: 2)
+                     |> Download.stream!(http_client: HTTPoisonMock, max_errors: 2)
                      |> Enum.to_list()
                    end
     end
@@ -264,10 +277,10 @@ defmodule Ex3mer.ClientTest do
       msg_async_error(3, {:closed, :timeout})
 
       assert_raise Ex3mer.Error,
-                   ~r/Failed after 2 attempts. Last reason: {:closed, :timeout}/,
+                   ~r/{:closed, :timeout}/,
                    fn ->
                      download()
-                     |> Client.stream!(http_client: HTTPoisonMock, max_errors: 2)
+                     |> Download.stream!(http_client: HTTPoisonMock, max_errors: 2)
                      |> Enum.to_list()
                    end
     end
