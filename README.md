@@ -1,6 +1,7 @@
 # Ex3mer
 
-[![Actions Status](https://github.com/luisgabrielroldan/ex3mer/workflows/Tests/badge.svg)](https://github.com/luisgabrielroldan/ex3mer/actions)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/luisgabrielroldan/ex3mer/on-push)
+[![github.com](https://img.shields.io/github/last-commit/luisgabrielroldan/ex3mer.svg)](https://github.com/luisgabrielroldan/ex3mer/commits/master)
 
 Ex3mer is a library for building streams from HTTP resources
 
