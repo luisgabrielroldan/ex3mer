@@ -1,6 +1,11 @@
 # Ex3mer
 
+[![Actions Status](https://github.com/luisgabrielroldan/ex3mer/workflows/Tests/badge.svg)](https://github.com/luisgabrielroldan/ex3mer/actions)
+
 Ex3mer is a library for building streams from HTTP resources
+
+
+*(THIS IS WORK IN PROGRESS)*
 
 ## Basic operation
 

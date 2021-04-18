@@ -2,13 +2,13 @@ defmodule Ex3mer.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @version "https://github.com/luisgabrielroldan/ex3mer"
+  @source_url "https://github.com/luisgabrielroldan/ex3mer"
 
   def project do
     [
       app: :ex3mer,
       version: @version,
-      elixir: "~> 1.11",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
