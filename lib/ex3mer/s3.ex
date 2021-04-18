@@ -19,7 +19,7 @@ defmodule Ex3mer.S3 do
   @type get_object_opts :: {:ex_aws_config, ExAWsConfig.t()} | {:version_id, binary()}
 
   @spec get_object(binary, binary, [get_object_opts]) :: Download.t()
-  def get_object(bucket, path, opts) do
+  def get_object(bucket, path, opts \\ []) do
     ex_aws_config = opts[:ex_aws_config] || ExAWsConfig.new(@service)
 
     path = set_params(path, opts)
