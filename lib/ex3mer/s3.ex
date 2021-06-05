@@ -16,17 +16,19 @@ defmodule Ex3mer.S3 do
 
   @get_object_params [:version_id]
 
-  @type get_object_opts :: {:ex_aws_config, ExAWsConfig.t()} | {:version_id, binary()}
+  @type ex_aws_config :: %{} | Keyword.t()
+  @type get_object_opts :: {:ex_aws_config, ex_aws_config()} | {:version_id, binary()}
 
   @spec get_object(binary, binary, [get_object_opts]) :: Download.t()
   def get_object(bucket, path, opts \\ []) do
-    ex_aws_config = opts[:ex_aws_config] || ExAWsConfig.new(@service)
+    ex_aws_config = opts[:ex_aws_config]
+    config = ExAWsConfig.new(@service, ex_aws_config)
 
     path = set_params(path, opts)
 
-    {url, ex_aws_config} = build_object_url(bucket, path, ex_aws_config)
+    {url, config} = build_object_url(bucket, path, config)
 
-    headers = build_headers(:get, url, ex_aws_config, @empty_body)
+    headers = build_headers(:get, url, config, @empty_body)
 
     %Download{
       url: url,

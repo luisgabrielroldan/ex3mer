@@ -1,4 +1,8 @@
 defmodule Ex3mer.Error do
+  @moduledoc """
+  Error
+  """
+
   defexception reason: nil
 
   @type t :: %__MODULE__{reason: any}
