@@ -93,6 +93,38 @@ defmodule Ex3mer.DownloadTest do
              ] = events
     end
 
+    test "with multiple chunks, no Content-Length" do
+      id = make_ref()
+
+      HTTPoisonMock
+      |> expect(:request, fn _, _, _, _, _ ->
+        {:ok, %AsyncResponse{id: id}}
+      end)
+      |> stub(:stream_next, fn %AsyncResponse{id: ^id} -> :ok end)
+
+      msg_async_status(id, 200)
+      msg_async_headers(id, [])
+      msg_async_chunk(id, "foo")
+      msg_async_chunk(id, "bar")
+      msg_async_chunk(id, "baz")
+      msg_async_chunk(id, "coz")
+      msg_async_end(id)
+
+      events =
+        download()
+        |> Download.stream!(http_client: HTTPoisonMock)
+        |> Enum.to_list()
+
+      assert [
+               {:status, 200},
+               {:headers, []},
+               {:chunk, "foo"},
+               {:chunk, "bar"},
+               {:chunk, "baz"},
+               {:chunk, "coz"}
+             ] = events
+    end
+
     test "recover from fail (disconnection)" do
       id_1 = make_ref()
       id_2 = make_ref()
