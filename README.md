@@ -6,7 +6,7 @@
 Ex3mer is a library for building streams from HTTP resources
 
 
-*(THIS IS WORK IN PROGRESS)*
+*(THIS IS A WORK IN PROGRESS)*
 
 ## Basic operation
 
@@ -15,7 +15,7 @@ Ex3mer is a library for building streams from HTTP resources
 ```elixir
 Ex3mer.S3.get_object("my-bucket", "path/to/object")
 |> Ex3mer.stream!()
-|> Enum.to_list()
+|> ...
 ```
 
 #### Generic download
@@ -23,7 +23,7 @@ Ex3mer.S3.get_object("my-bucket", "path/to/object")
 ```elixir
 Ex3mer.download(:get, "http://example.com/path/to/file.zip")
 |> Ex3mer.stream!()
-|> Enum.to_list()
+|> ...
 ```
 
 ## Examples
@@ -86,7 +86,7 @@ In case of disconnection, a new request is made transparently but no status/head
 
 # controllers/proxy_controller.ex
 defmodule MyAppWeb.ProxyController do
-  use Ex3merTestWeb, :controller
+  use MyAppWeb, :controller
 
   def show(conn, %{"path" => path}) do
     path = Enum.join(path, "/")

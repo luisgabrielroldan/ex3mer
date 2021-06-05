@@ -1,5 +1,7 @@
 defmodule Ex3mer.Download do
-  @moduledoc false
+  @moduledoc """
+  Download
+  """
 
   alias HTTPoison.Error, as: HTTPoisonError
 
