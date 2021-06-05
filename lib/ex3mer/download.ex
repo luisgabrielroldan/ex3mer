@@ -123,6 +123,9 @@ defmodule Ex3mer.Download do
     _ = :hackney.stop_async(id)
 
     cond do
+      is_nil(state.total_bytes) ->
+        {:halt, state}
+
       state.received_bytes < state.total_bytes and error_count < max_errors ->
         new_state =
           %{state | errors_count: state.errors_count + 1}
