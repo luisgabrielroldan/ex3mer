@@ -165,7 +165,9 @@ defmodule Ex3mer.Download do
   end
 
   defp stream_res_end(%{resp: %{id: id}}) do
-    :hackney.stop_async(id)
+    _ = :hackney.stop_async(id)
+
+    flush_messages(id)
   end
 
   defp begin_async_request(%{download: download} = state) do
@@ -222,6 +224,16 @@ defmodule Ex3mer.Download do
     case fetch_header(headers, "Accept-Ranges") do
       "bytes" -> true
       _other -> false
+    end
+  end
+
+  defp flush_messages(id) do
+    receive do
+      %{id: ^id} ->
+        flush_messages(id)
+    after
+      0 ->
+        :ok
     end
   end
 
